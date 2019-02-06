@@ -1,0 +1,51 @@
+series: bionic
+comment:
+- 'machines section to decide order of deployment. database sooner = faster'
+machines:
+  '0':
+    constraints: mem=3072M
+  '1':
+  '2':
+  '3':
+relations:
+- - keystone:shared-db
+  - percona-cluster:shared-db
+- - neutron-api:shared-db
+  - percona-cluster:shared-db
+- - neutron-api:identity-service
+  - keystone:identity-service
+- - neutron-api:amqp
+  - rabbitmq-server:amqp
+- - neutron-api:neutron-plugin-api-subordinate
+  - sdn-neutron-plugin-api-subordinate
+applications:
+  percona-cluster:
+    charm: cs:~openstack-charmers-next/percona-cluster
+    num_units: 1
+    to:
+    - '0'
+  keystone:
+    charm: cs:~openstack-charmers-next/keystone
+    num_units: 1
+    options:
+      openstack-origin: cloud:bionic-rocky
+    to:
+    - '1'
+  neutron-api:
+    charm: cs:~openstack-charmers-next/neutron-api
+    num_units: 1
+    options:
+      openstack-origin: cloud:bionic-rocky
+      manage-neutron-plugin-legacy-mode: False
+    to:
+    - '2'
+  sdn-neutron-plugin-api-subordinate:
+    charm: ../../../sdn-neutron-plugin-api-subordinate
+    num_units: 0
+    series: bionic
+# Add config options here
+  rabbitmq-server:
+    charm: cs:~openstack-charmers-next/rabbitmq-server
+    num_units: 1
+    to:
+    - '3'
